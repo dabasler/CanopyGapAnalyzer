@@ -1,0 +1,8 @@
+~/CGA/testfiles/Test1.JPG
+~/CGA/testfiles/Test2.JPG
+~/CGA/testfiles/Test3.JPG
+~/CGA/testfiles/Test4.JPG
+~/CGA/testfiles/Test5.JPG
+~/CGA/testfiles/Test6.JPG
+~/CGA/testfiles/Test7.JPG
+~/CGA/testfiles/Test8.JPG
