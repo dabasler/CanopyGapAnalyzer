@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 ###################
 # Image Segmentation and coding
 ###################
@@ -1230,11 +1232,15 @@ def getPixelMask(setpar,inorth):
 #################################################################################################################
 # MAIN EXECUTION
 #################################################################################################################
+basePath=os.getcwd()
+resultpath=os.path.join(sys.argv[2],"out")
+
 if len(sys.argv)> 1:
 	print 'reading path '+ sys.argv[1]
 	basePath=sys.argv[1]
-else:
-	basePath=os.getcwd()
+if len(sys.argv)> 2:
+	resultpath=sys.argv[2]
+
 
 filelist=listallfiles(basePath)
 
@@ -1274,7 +1280,7 @@ ViewCap=[0,0]				#[75.0,130.0]
 ring_mode= "Angle" 			#"Angle" or "Area" divide view into equal angle or area rings
 
 # OUTPUT Paths
-resultpath="C:/PHD/GroundObservations/Results/LAI/"
+# resultpath set as parameter above
 BINpath=resultpath+"BINS/"
 GRIDpath=resultpath+"GRIDS/"
 resultfile="Results.txt"
