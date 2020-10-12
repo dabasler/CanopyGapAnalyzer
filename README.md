@@ -21,9 +21,10 @@ In addition, the code also includes some variations of these methods.
 
 ## Tools
 The tools provided with this script are:
-* ImageSetup.py: a GUI tool in order to set mark the rotation (set North) and mask certain areas of the image to be ignored (sun) or analyzed separately (requires glade).
+* ImageSetup.py: a GUI tool in order to set mark the rotation (set North) and mask certain areas of the image to be ignored (sun) or analyzed separately (requires [https://glade.gnome.org/] (glade) ).
 * NorthCorrected.py: Rotate Images so that North is on top. This script uses the parameters in the *.par file (as created my ImageSetup.py) to determine the rotation angle.
-* Overview.py: Stack images together to create a nice overview
+* Overview.py: Stack images together to create a nice overview (Servers a template only, needs to be edited according to the number of images)
+
 
 ## Installation and Usage
 
@@ -58,3 +59,5 @@ The Fields are defined as follows:
 
 ## Note
 This code was first written 2011, I'm currently testing if it still works as intended. There are still many hard-coded parameters that can be should be made accessible as command line arguments
+Update Oct. 2020: The main code CGA.py is now Python3 compatible. Tools still need to be tested
+

@@ -8,7 +8,7 @@
 # INCL. IMAGE TO BINARY MASK CONVERSION
 
 def getMask(imagename):
-	print 'import mask'
+	print ('import mask')
 	img = Image.open(imagename)
 	img.load()
 	img=img.convert('L') # Prevents crash (converting type '1' img to array doesn't work...)
@@ -32,10 +32,10 @@ def getRGB(imagename,imgcenter,imgradius,square=True):
 def squareArray(array,center,radius):
 	arrshape=array.shape
 	new_array=np.zeros((2*radius)*(2*radius),dtype=np.uint8).reshape((2*radius),(2*radius))
-	left=center[0]-radius
-	right=center[0]+radius
-	top=center[1]-radius
-	bottom=center[1]+radius
+	left=int(center[0]-radius)
+	right=int(center[0]+radius)
+	top=int(center[1]-radius)
+	bottom=int(center[1]+radius)
 	ntop=0
 	nleft=0
 	nright=2*radius
@@ -59,7 +59,7 @@ def getSkyMask(name,gamma,max_fov,set_square,center,inv_pix): #Oct 2011 Added in
 	global BasicMaps,USE_EXISTING_BINARYMASKS
 	sourceImage=getRGB(name,center,max_fov,square=set_square)
 	if USE_EXISTING_BINARYMASKS==True:
-		BINname=BINpath+name.split('/')[-1].split('.')[0]+"_bin.bmp"
+		BINname=os.path.join(BINpath,name.split('/')[-1].split('.')[0]+"_bin.bmp")
 		if os.path.exists(BINname)==True:
 			skymask=getMask(BINname)
 		else:
@@ -75,7 +75,7 @@ def getSkyMask(name,gamma,max_fov,set_square,center,inv_pix): #Oct 2011 Added in
 		if inv_pix.shape[1]==0:
 			return skymask
 		else:
-			print "masking "+ str(len(inv_pix[0]))+ " invalid pixels"
+			print ("masking "+ str(len(inv_pix[0]))+ " invalid pixels")
 		inv_pix=[list(inv_pix[1]),list(inv_pix[0])] # arrays are y,x
 		skymask[inv_pix]=3
 	return skymask
@@ -109,7 +109,7 @@ def SobelEdges(arr):
 
 def ImageFiltering(name,ImageArray,gamma):
 	DEBUG=False
-	print 'filtering '+ name
+	print ('filtering '+ name)
 	R,G,B=ImageArray[0],ImageArray[1],ImageArray[2]
 	if not gamma==1.0: 	# gamma expansion
 		R=np.array(np.power((R/255.0),gamma)*255,dtype=np.uint8) 
@@ -129,7 +129,7 @@ def ImageFiltering(name,ImageArray,gamma):
 		Image.fromarray(flt_edge).show()
 		Image.fromarray(flt_thres).show()
 	img = Image.fromarray(flt_enhance).convert('1')
-	img.save(BINpath+name.split("/")[-1].split('.')[0]+"_bin.bmp")
+	img.save(os.path.join(BINpath,name.split("/")[-1].split('.')[0]+"_bin.bmp"))
 	flt_enhance[flt_enhance>0]=1
 	flt_enhance=np.array(flt_enhance,dtype=np.uint8)
 	del img,flt_smooth,flt_thres,flt_edge,R,G,B
@@ -182,10 +182,10 @@ def rasterCircle(x0,y0,radius,setPixel,col_val):
 	ddF_y = -2 * radius
 	x = 0
 	y = radius
-	y1=y0 + radius
-	y2=y0 - radius
-	x1=x0 + radius
-	x2=x0 - radius
+	y1= int(y0 + radius)
+	y2= int(y0 - radius)
+	x1= int(x0 + radius)
+	x2= int(x0 - radius)
 	if y2<0: y2=0
 	if y1>ym: y1=ym
 	if x1<0: x1=0
@@ -226,6 +226,8 @@ def rasterCircle(x0,y0,radius,setPixel,col_val):
 		if x2>xm: x2=xm
 		if x3>xm: x3=xm
 		if x4>xm: x4=xm
+		x1,x2,x3,x4 = int(x1),int(x2),int(x3),int(x4)
+		y1,y2,y3,y4 = int(y1),int(y2),int(y3),int(y4)
 		setPixel[x1, y1]=col_val
 		setPixel[x2, y1]=col_val
 		setPixel[x1, y2]=col_val
@@ -524,7 +526,7 @@ def getSegmentAngles(nrings,nsectors,north,rings):
 
 def getSegments(center,nrings,nsectors,north,rings,max_fov):
 	global BasicMaps
-	print 'extracting segments'
+	print ('extracting segments')
 	id,alphamap,c,x,y=BasicMaps
 	shape=c.shape
 	x0,y0=center
@@ -662,7 +664,7 @@ def setLens(LensNumber):
 	LensName.append("Raynox DCR-CF185")
 	LensInfo.append("Raynox fisheye adapter / Fuji FinePix")
 	LensPar.append([0.5982,0.024459,0,0,0])
-	print "LENS: " +LensName[LensNumber]+": "+LensInfo[LensNumber]
+	print ("LENS: " +LensName[LensNumber]+": "+LensInfo[LensNumber])
 	return LensPar[LensNumber]
 
 def LensCorr(Lens_fov_radius,T):
@@ -684,7 +686,9 @@ def linreg(X, Y):
 	#Summary Linear regression of y = ax + b
 	N = len(X)
 	Sx = Sy = Sxx = Syy = Sxy = 0.0
-	for x, y in map(None, X, Y):
+	#for x, y in map(None, X, Y): # Python 2.7
+	for x, y in zip_longest(X,Y):
+	
 		Sx = Sx + x
 		Sy = Sy + y
 		Sxx = Sxx + x*x
@@ -693,7 +697,8 @@ def linreg(X, Y):
 	det = Sxx * N - Sx * Sx
 	a, b = (Sxy * N - Sy * Sx)/det, (Sxx * Sy - Sx * Sxy)/det
 	meanerror = residual = 0.0
-	for x, y in map(None, X, Y):
+	#for x, y in map(None, X, Y):
+	for x, y in zip_longest(X,Y):
 		meanerror = meanerror + (y - Sy/N)**2
 		residual = residual + (y - a * x - b)**2
 	RR = 1 - residual/meanerror
@@ -717,7 +722,7 @@ def getTransmission(data,segments):
 			sky=len (segmentpixel[segmentpixel==1])
 			vegetation=len (segmentpixel[segmentpixel==0])
 			if sky==0:
-				print 'warning: segment ' + str(i) + ' transmission is 0%'
+				print ('warning: segment ' + str(i) + ' transmission is 0%')
 				emptysegment.append(i)
 				sky=0.5 # Avoid Transmission= 0, set 0.5 pixel as sky
 			t=sky/(sky+vegetation*1.0)
@@ -992,7 +997,7 @@ def initializeParameters(fov,deg_per_ring,nrings,rings,Lfov_degree,north,slope_p
 
 def getLAI(name,skymask,parameter,savegrid,showgrid):
 	global BasicMaps
-	print 'calculating ...\n'
+	print ('calculating ...\n')
 	shape,nrings,nsectors,rings,north,fov,slope_par,ViewCap,segments,zenith,azimuth,LiCorSegments,LiCorGrid=parameter
 	datamask=np.zeros(shape[0]*shape[1],dtype=np.uint8).reshape(shape)
 	datamask=datamask+skymask
@@ -1011,7 +1016,7 @@ def getLAI(name,skymask,parameter,savegrid,showgrid):
 		showGrid(grid,skymask,north).show()
 		#showGrid(LiCorGrid,datamask).show()
 	if not savegrid=="":
-		showGrid(grid,skymask,north).save(savegrid+name.split('/')[-1].split('.')[0]+'_grid.jpg')
+		showGrid(grid,skymask,north).save(os.path.join(savegrid,name.split('/')[-1].split('.')[0]+'_grid.jpg'))
 		#showGrid(LiCorGrid,datamask).save(name.split('.')[0]+'_LiCorgrid.jpg')
 	#Calculate Values
 	SVF=getSkyViewFactor(nsectors,nrings,transmission,zenith,rings)
@@ -1106,7 +1111,7 @@ def runCalculations(filelist,resultfile,SeriesSettings,AnalysisSettings):
 	LiCorSegments=getSegments(center,5,1,north,LiCorRings,max_fov)
 	LiCorGrid=drawGrid(shape,center,5,1,north,74.1,max_fov,LiCorRings,(0,0))
 	# PREPARE OUTOUT
-	f = open(resultpath+resultfile,'w')
+	f = open(resultfile,'w')
 	header=["image","nrings", "nsectors", "empty_seg", "transmission", "SkyViewFactor", "LAI_norman", "LAI_lang", "LAI_miller", "LAI_licor_gen", "LAI_licor",	"linm_LAI_norman", "linm_LAI_lang", "linm_LAI_miller", "linm_LAI_licor_gen", "logm_LAI_norman", "logm_LAI_lang", "logm_LAI_miller", "logm_LAI_licor_gen",	"CI_LAI_norman", "CI_LAI_lang", "CI_LAI_miller", "CI_LAI_licor_gen",
 	"MTA_Lang", "rHV_norman", "MLA_norman", "linm_MTA_Lang", "linm_rHV_norman", "linm_MLA_norman", "logm_MTA_Lang", "logm_rHV_norman", "logm_MLA_norman" ]
 	fline=""
@@ -1124,7 +1129,7 @@ def runCalculations(filelist,resultfile,SeriesSettings,AnalysisSettings):
 		if not currentset==setname:
 			setpar=readSetParameter(setname)
 			currentset=setname
-		print 'processing image ' + file
+		print ('processing image ' + file)
 		north=getParameter(file)[2]
 		inv_pix=getPixelMask(setpar,north)	
 		if nsectors>1:
@@ -1148,15 +1153,16 @@ def runCalculations(filelist,resultfile,SeriesSettings,AnalysisSettings):
 #########################################################################
 import os,sys
 import numpy as np
-import Image
+from PIL import Image
 from scipy.ndimage import gaussian_filter
+from itertools import zip_longest
 
-print 'INITIALIZE PROGRAM:'
+print ('INITIALIZE PROGRAM:')
 
 def listallfiles(basePath):
 	basePath=basePath.replace("\\","/")
 	if os.path.exists(basePath)==False:
-		print "Path does not exits"
+		print ("Path does not exits")
 		return
 	filelist=[]
 	for root, dirs, files in os.walk(basePath):
@@ -1178,26 +1184,33 @@ def readfilelist(filelistname):
 		filelist.append(line)
 	return filelist
 
-def getParameter(imagename):
-	parfile=imagename.split(".")[0]+".par"
+def getParameter(imagename,silent=False):
+	parfile= os.path.splitext(imagename)[0]+".par"
 	if os.path.exists(parfile)==False:
-		print "no metadata: ("+ parfile.split("/")[-1]+"): setting north to 0.0"
+		if not silent:
+			print ("no metadata: ("+ parfile.split("/")[-1]+"): setting north to 0.0")
 		center=(0,0)
 		radius=0
 		north=0.0
 		burn_center=(0,0)
 		burn_radius=0
 	else:
-		print "reading metadata from "+ parfile.split("/")[-1]
+		print ("reading metadata from "+ os.path.split(parfile)[-1])
 		pfile= open(parfile,'r')
-		parline=pfile.readlines()[0]
+		parline=pfile.readlines()[1] # remove header
 		pfile.close()
 		parline=parline.strip()
 		parline=parline.split(';')
-		centerX,centerY,radius,north,woodimage,burn_centerX,burn_centerY,burn_radius=parline
+		#SITE;OBS;LAT;LON;ALT;TIME;CENTER;RADIUS;NORTH;WOOD #Optional ,BX,BY,BR
+		center=parline[6]
+		centerX,centerY = center.strip("[]").split(',')
 		center= int(centerX),int(centerY)
-		radius=int(radius)
-		north=float(north)
+		radius=int(parline[7])
+		north=float(parline[8])
+		burn_centerX,burn_centerY,burn_radius= ("","","")
+		if len(parline)>10:
+			burn_centerX,burn_centerY,burn_radius= int(parline[10]),int(parline[11]),int(parline[12])
+		#centerX,centerY,radius,north,woodimage,burn_centerX,burn_centerY,burn_radius=parline
 		if burn_centerX=="": burn_centerX=0
 		if burn_centerY=="": burn_centerY=0
 		burn_center=int(burn_centerX),int(burn_centerY)
@@ -1208,12 +1221,12 @@ def getParameter(imagename):
 
 
 def readSetParameter(setname):
-	print "collecting site-set data"
+	print ("collecting site-set data")
 	setlist=listallfiles(setname)
 	setpar=[]
 	for s in setlist:
 		setpar.append(getParameter(s))
-	print ""
+	print ("")
 	return setpar
 
 
@@ -1233,27 +1246,39 @@ def getPixelMask(setpar,inorth):
 # MAIN EXECUTION
 #################################################################################################################
 basePath=os.getcwd()
+
+if len(sys.argv)<3:
+	print ("CGA.py [imagepath] [outpath]")
+
 resultpath=os.path.join(sys.argv[2],"out")
 
 if len(sys.argv)> 1:
-	print 'reading path '+ sys.argv[1]
+	print ('reading path '+ sys.argv[1])
 	basePath=sys.argv[1]
 if len(sys.argv)> 2:
 	resultpath=sys.argv[2]
 
-
 filelist=listallfiles(basePath)
 
-print 'initialize center, radius'
-center,max_fov,north=getParameter(filelist[0])[0:3]
+print ('initialize center, radius')
+center,max_fov,north=getParameter(filelist[0],True)[0:3]
 i=0
-while center==(0,0):
-	center,max_fov,north=getParameter(filelist[i])[0:3]
+
+while center==(0,0) and i< len(filelist):
+	center,max_fov,north=getParameter(filelist[i],True)[0:3]
 	i=i+1
+
+if center==(0,0):
+	print ("WARNING: No parameter file found --- Image center is estimated and may generate accurate results")
+	sourceImage=getRGB(filelist[0],[0,0],0,square=False)
+	fullshape= sourceImage[0].shape
+	center=(int(fullshape[1]/2),fullshape[0]/2)
+	max_fov=int(0.75*fullshape[1]/2)
+
 imgcenter=[center[0],center[1]]
-print "center: "+ str(center)
-print "radius: "+ str(max_fov)
-print 'initialize images'
+print ("center: "+ str(center))
+print ("radius: "+ str(max_fov))
+print ('initialize images')
 sourceImage=getRGB(filelist[0],[0,0],0,square=False)
 fullshape= sourceImage[0].shape
 sourceImage=getRGB(filelist[0],imgcenter,max_fov,square=True)
@@ -1264,9 +1289,9 @@ del sourceImage
 #################################################################################
 # Setup Basic Parameters
 
-USE_EXISTING_BINARYMASKS=True
+USE_EXISTING_BINARYMASKS=False
 
-print 'initialize lens'
+print ('initialize lens')
 LensPar=setLens(3)
 Lfov_degree=90.0			# maximal field of view of the lens
 
@@ -1281,36 +1306,36 @@ ring_mode= "Angle" 			#"Angle" or "Area" divide view into equal angle or area ri
 
 # OUTPUT Paths
 # resultpath set as parameter above
-BINpath=resultpath+"BINS/"
-GRIDpath=resultpath+"GRIDS/"
-resultfile="Results.txt"
+BINpath= os.path.join(resultpath,"BINS")
+GRIDpath=os.path.join(resultpath,"GRIDS")
+resultfile=os.path.join(resultpath,"Results.txt")
 
 #################################################################################
 if USE_EXISTING_BINARYMASKS==True: 
-	print "Using existing image segmentation"
+	print ("Using existing image segmentation")
 else:
-	print "Initialize image segmentation"
+	print ("Initialize image segmentation")
 # initialize individual image settings
 north=0 # will be set individually from parameter file 
 slope=0 #(creation of parameter in ImageRot.py is not supported yet)
 aspect=0 #(creation of parameter in ImageRot.py is not supported yet)
-print 'initialize basic maps'
+print ('initialize basic maps')
 BasicMaps=getBasicMaps(shape,center)
-print 'initialize settings'
-print "\tfield of view: " +str(fov)
-print "\trings: " +str(nrings)+", equal "+ ring_mode
-print "\tsectors: " +str(nrings)
+print ('initialize settings')
+print ("\tfield of view: " +str(fov))
+print ("\trings: " +str(nrings)+", equal "+ ring_mode)
+print ("\tsectors: " +str(nrings))
 Analysis_Settings=north,fov,nrings,nsectors,rings,slope,aspect,ViewCap,ring_mode
 Series_Settings=shape,center,LensPar,Lfov_degree,max_fov,resultpath,resultfile,GRIDpath
 if os.path.exists(resultpath)==False:
-	print "creating output directory"
+	print ("creating output directory")
 	os.mkdir(resultpath)
 if os.path.exists(BINpath)==False:
-	print "creating output directory"
+	print ("creating output directory")
 	os.mkdir(BINpath)
 if os.path.exists(GRIDpath)==False:
-	print "creating output directory"
+	print ("creating output directory")
 	os.mkdir(GRIDpath)
-print '\nRUNNING ANALYSIS\n'
+print ('\nRUNNING ANALYSIS\n')
 runCalculations(filelist,resultfile,Series_Settings,Analysis_Settings)
 
